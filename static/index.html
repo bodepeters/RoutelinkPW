@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PriceWatch MVP</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="PriceWatch home"><img class="brand-logo" src="/static/RLPW.svg" alt="PriceWatch"></a>
+    <div class="status"><i></i> LOCAL WORKSPACE</div>
+    <button class="button theme-toggle" id="themeToggle" type="button" aria-label="Switch theme">☀ Light</button>
+    <button class="button primary" id="newPartnerBtn">＋ Add Partner</button>
+  </header>
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="eyebrow">PARTNERS</div>
+      <div id="partnerList" class="partner-list"></div>
+      <div class="side-note"><b>Supported MVP format</b><br>CSV with SKU/product and price columns. Excel support can be added with an optional parser dependency.</div>
+    </aside>
+    <section class="content">
+      <div id="toast" class="toast"></div>
+      <div class="hero">
+        <div><div class="eyebrow">PRICE MONITORING</div><h1 id="partnerTitle">Select a partner</h1><p id="partnerMeta">Upload a baseline and current pricing file to run your first comparison.</p></div>
+        <div class="hero-actions"><button class="button" id="notifyBtn" disabled>✉ Notification Preview</button></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <section class="card upload-card">
+        <div class="section-head"><div><div class="eyebrow">01 / RUN A COMPARISON</div><h2>Upload pricing files</h2></div><span class="tag">CSV supported</span></div>
+        <div class="upload-grid">
+          <label class="drop"><span>BASELINE / PREVIOUS</span><strong id="baselineName">Choose CSV file</strong><input id="baselineFile" type="file" accept=".csv,.xlsx,.xls"></label>
+          <label class="drop"><span>CURRENT / LATEST</span><strong id="currentName">Choose CSV file</strong><input id="currentFile" type="file" accept=".csv,.xlsx,.xls"></label>
+        </div>
+        <button class="button primary run" id="runBtn" disabled>▶ Run comparison</button>
+        <div id="runStatus" class="run-status"></div>
+      </section>
+      <section class="card" id="resultCard">
+        <div class="section-head"><div><div class="eyebrow">02 / RESULTS</div><h2>Detected changes</h2></div><span id="scanTime" class="muted">No scan yet</span></div>
+        <div id="resultEmpty" class="empty">Run a comparison to see price, billing, added, and removed-row changes here.</div>
+        <div id="changesWrap" class="table-wrap hidden"><table><thead><tr><th>Type</th><th>SKU</th><th>Product</th><th>Previous</th><th>Current</th><th>Impact</th></tr></thead><tbody id="changesBody"></tbody></table></div>
+      </section>
+      <section class="card">
+        <div class="section-head"><div><div class="eyebrow">03 / AUDIT TRAIL</div><h2>Activity log</h2></div></div>
+        <div id="activity" class="activity"><div class="empty">Select a partner to load activity.</div></div>
+      </section>
+    </section>
+  </main>
+  <dialog id="partnerDialog"><form method="dialog" id="partnerForm"><div class="section-head"><h2>Add partner</h2><button class="icon" value="cancel">×</button></div><label>Partner name<input name="name" required placeholder="e.g. GlobalEx Ltd"></label><label>Email or source address<input name="email" type="email" placeholder="rates@example.com"></label><div class="dialog-actions"><button class="button" value="cancel">Cancel</button><button class="button primary" value="default">Create partner</button></div></form></dialog>
+  <dialog id="notifyDialog"><div class="section-head"><h2>Notification preview</h2><button class="icon" id="closeNotify">×</button></div><div id="notifyContent" class="notification"></div></dialog>
+  <script src="/static/app.js"></script>
+</body>
+</html>
