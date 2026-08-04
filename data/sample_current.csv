@@ -1,0 +1,6 @@
+sku,product,category,price,unit,billing_increment,status
+ACM-0001,Compute Basic,Cloud,5.99,per hour,Hourly,Active
+ACM-0042,Cloud Storage Pro,Storage,17.49,per month,Monthly,Active
+ACM-0087,Bandwidth Overage,Network,0.06,per GB,Per GB,Active
+ACM-0103,Support Enterprise,Support,349.00,per month,Monthly,Active
+ACM-0110,Support Standard,Support,99.00,per month,Monthly,Active
