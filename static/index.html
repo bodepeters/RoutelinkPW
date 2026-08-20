@@ -4,11 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PriceWatch MVP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="PriceWatch home"><img class="brand-logo" src="/static/RLPW.svg" alt="PriceWatch"></a>
+    <a class="brand" href="/" aria-label="PriceWatch home"><img class="brand-logo" id="brandLogo" src="/static/RLPW.svg" data-light-logo="/static/RLPW.svg" data-dark-logo="/static/RLPWd.svg" alt="PriceWatch"></a>
     <div class="status"><i></i> LOCAL WORKSPACE</div>
     <button class="button theme-toggle" id="themeToggle" type="button" aria-label="Switch theme">☀ Light</button>
     <button class="button primary" id="newPartnerBtn">＋ Add Partner</button>
@@ -23,7 +26,7 @@
       <div id="toast" class="toast"></div>
       <div class="hero">
         <div><div class="eyebrow">PRICE MONITORING</div><h1 id="partnerTitle">Select a partner</h1><p id="partnerMeta">Upload a baseline and current pricing file to run your first comparison.</p></div>
-        <div class="hero-actions"><button class="button" id="notifyBtn" disabled>✉ Notification Preview</button></div>
+        <div class="hero-actions"><button class="button" id="notifyBtn" disabled>✉ Notification Preview</button><button class="icon-button danger" id="deletePartnerBtn" type="button" aria-label="Delete partner" title="Delete partner" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>
       </div>
       <div class="stats" id="stats"></div>
       <section class="card upload-card">
@@ -46,8 +49,9 @@
       </section>
     </section>
   </main>
-  <dialog id="partnerDialog"><form method="dialog" id="partnerForm"><div class="section-head"><h2>Add partner</h2><button class="icon" value="cancel">×</button></div><label>Partner name<input name="name" required placeholder="e.g. GlobalEx Ltd"></label><label>Email or source address<input name="email" type="email" placeholder="rates@example.com"></label><div class="dialog-actions"><button class="button" value="cancel">Cancel</button><button class="button primary" value="default">Create partner</button></div></form></dialog>
-  <dialog id="notifyDialog"><div class="section-head"><h2>Notification preview</h2><button class="icon" id="closeNotify">×</button></div><div id="notifyContent" class="notification"></div></dialog>
+  <dialog id="partnerDialog"><form id="partnerForm"><div class="section-head"><h2>Add partner</h2><button class="icon" id="closePartner" type="button" aria-label="Close">×</button></div><label>Partner name<input name="name" required placeholder="e.g. GlobalEx Ltd"></label><label>Email or source address<input name="email" type="email" placeholder="rates@example.com"></label><div class="dialog-actions"><button class="button" id="cancelPartner" type="button">Cancel</button><button class="button primary" type="submit">Create partner</button></div></form></dialog>
+  <dialog id="notifyDialog"><div class="section-head"><h2>Notification preview</h2><button class="icon" id="closeNotify" type="button" aria-label="Close">×</button></div><div id="notifyContent" class="notification"></div><div class="dialog-actions notification-actions"><button class="button" id="cancelNotify" type="button">Close</button><button class="button primary" id="sendMailBtn" type="button">✉ Send mail</button></div></dialog>
+  <dialog id="deleteDialog"><div class="confirm-dialog"><div class="confirm-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><h2>Delete partner?</h2><p id="deleteMessage">This will permanently remove the partner, scan history, and uploaded files.</p><div class="dialog-actions"><button class="button" id="cancelDelete" type="button">Cancel</button><button class="button danger-fill" id="confirmDelete" type="button">Delete partner</button></div></div></dialog>
   <script src="/static/app.js"></script>
 </body>
 </html>

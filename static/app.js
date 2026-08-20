@@ -6,6 +6,8 @@ function applyTheme(theme) {
   localStorage.setItem('pricewatch-theme', theme);
   $('themeToggle').textContent = theme === 'light' ? '☾ Dark' : '☀ Light';
   $('themeToggle').setAttribute('aria-label', theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+  const logo = $('brandLogo');
+  if (logo) logo.src = theme === 'dark' ? logo.dataset.darkLogo : logo.dataset.lightLogo;
 }
 function initTheme() {
   const saved = localStorage.getItem('pricewatch-theme');
@@ -40,7 +42,7 @@ async function selectPartner(id) {
   const p = state.partners.find(x => x.id === id); if (!p) return;
   $('partnerTitle').textContent = p.name;
   $('partnerMeta').textContent = p.email ? `Source: ${p.email} · Upload two files to compare pricing` : 'No source configured · Upload two files to compare pricing';
-  $('notifyBtn').disabled = true; $('baselineFile').value = ''; $('currentFile').value = '';
+  $('notifyBtn').disabled = true; $('deletePartnerBtn').disabled = false; $('baselineFile').value = ''; $('currentFile').value = '';
   $('baselineName').textContent = 'Choose CSV file'; $('currentName').textContent = 'Choose CSV file'; $('runBtn').disabled = true;
   if (p.latest_scan) { try { await loadScan(p.latest_scan.id); } catch (e) { toast(e.message); } } else { renderEmpty(); }
   await loadActivity(id);
@@ -73,12 +75,50 @@ async function runScan() {
   try { const data = await api(`/api/partners/${state.partnerId}/scan`, {method:'POST', body:form}); renderScan(data); await loadActivity(state.partnerId); await loadPartners(); toast(`${data.summary.total_changes} change(s) detected`); } catch (e) { toast(e.message); } finally { $('runBtn').disabled = false; $('runStatus').textContent = ''; }
 }
 async function notifyPreview() { if (!state.scan) return; try { const data = await api(`/api/scans/${state.scan.id}/notify-preview`, {method:'POST'}); $('notifyContent').textContent = `TO: ${data.to || '(no recipient configured)'}\nSUBJECT: ${data.subject}\n\n${data.body}`; $('notifyDialog').showModal(); await loadActivity(state.partnerId); } catch(e) { toast(e.message); } }
+async function sendMail() {
+  if (!state.scan) return;
+  try {
+    const data = await api(`/api/scans/${state.scan.id}/send-mail`, {method:'POST'});
+    const params = new URLSearchParams({subject: data.subject, body: data.body});
+    window.location.href = `mailto:${encodeURIComponent(data.to)}?${params.toString()}`;
+    $('notifyDialog').close();
+    await loadActivity(state.partnerId);
+    toast('Mail draft opened');
+  } catch (e) { toast(e.message); }
+}
+function openDeleteDialog() {
+  const partner = state.partners.find(p => p.id === state.partnerId);
+  if (!partner) return;
+  $('deleteMessage').textContent = `Delete ${partner.name}? This will permanently remove the partner, scan history, and uploaded files.`;
+  $('deleteDialog').showModal();
+}
+async function deletePartner() {
+  const partner = state.partners.find(p => p.id === state.partnerId);
+  if (!partner) return;
+  $('confirmDelete').disabled = true;
+  try {
+    await api(`/api/partners/${partner.id}`, {method:'DELETE'});
+    $('deleteDialog').close();
+    state.partnerId = null; state.scan = null;
+    $('deletePartnerBtn').disabled = true; $('notifyBtn').disabled = true;
+    await loadPartners();
+    if (!state.partnerId) {
+      $('partnerTitle').textContent = 'Select a partner';
+      $('partnerMeta').textContent = 'Create a partner or select one from the list.';
+      renderEmpty(); $('activity').innerHTML = '<div class="empty">Select a partner to load activity.</div>';
+    }
+    toast('Partner deleted');
+  } catch (e) { toast(e.message); }
+  finally { $('confirmDelete').disabled = false; }
+}
 
 $('baselineFile').addEventListener('change', e => fileLabel(e.target, 'baselineName'));
 $('currentFile').addEventListener('change', e => fileLabel(e.target, 'currentName'));
-$('runBtn').addEventListener('click', runScan); $('notifyBtn').addEventListener('click', notifyPreview); $('closeNotify').addEventListener('click', () => $('notifyDialog').close());
+$('runBtn').addEventListener('click', runScan); $('notifyBtn').addEventListener('click', notifyPreview); $('sendMailBtn').addEventListener('click', sendMail); $('deletePartnerBtn').addEventListener('click', openDeleteDialog); $('confirmDelete').addEventListener('click', deletePartner);
+$('closeNotify').addEventListener('click', () => $('notifyDialog').close()); $('cancelNotify').addEventListener('click', () => $('notifyDialog').close());
 $('themeToggle').addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'));
 $('newPartnerBtn').addEventListener('click', () => $('partnerDialog').showModal());
+$('closePartner').addEventListener('click', () => $('partnerDialog').close()); $('cancelPartner').addEventListener('click', () => $('partnerDialog').close()); $('cancelDelete').addEventListener('click', () => $('deleteDialog').close());
 $('partnerForm').addEventListener('submit', async e => { e.preventDefault(); const form = new FormData(e.target); try { const p = await api('/api/partners', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:form.get('name'), email:form.get('email')})}); $('partnerDialog').close(); e.target.reset(); state.partnerId = p.id; await loadPartners(); toast('Partner created'); } catch(err) { toast(err.message); } });
 initTheme();
 loadPartners().catch(e => toast(e.message));

@@ -327,6 +327,49 @@ class Handler(BaseHTTPRequestHandler):
             with get_db() as db:
                 db.execute("INSERT INTO activity(partner_id,level,message,created_at) VALUES (?,?,?,?)", (row["partner_id"], "ok", "Notification preview generated (not sent)", now_iso()))
             return json_response(self, {"to": row["email"], "subject": subject, "body": body, "sent": False})
+        if path.startswith("/api/scans/") and path.endswith("/send-mail"):
+            scan_id = path.split("/")[3]
+            with get_db() as db:
+                row = db.execute("SELECT scans.*, partners.name, partners.email FROM scans JOIN partners ON partners.id=scans.partner_id WHERE scans.id=?", (scan_id,)).fetchone()
+            if not row:
+                return json_response(self, {"error": "Scan not found"}, HTTPStatus.NOT_FOUND)
+            if not row["email"]:
+                return json_response(self, {"error": "This partner has no email address configured"}, HTTPStatus.BAD_REQUEST)
+            result = json.loads(row["result_json"])
+            s = result["summary"]
+            subject = f"PriceWatch Alert — {row['name']}: {s['total_changes']} Change(s) Detected"
+            body = f"The latest pricing sheet for {row['name']} has {s['total_changes']} detected change(s): {s['price_increases']} price increase(s), {s['price_decreases']} decrease(s), and {s['billing_changes']} billing change(s)."
+            with get_db() as db:
+                db.execute("INSERT INTO activity(partner_id,level,message,created_at) VALUES (?,?,?,?)", (row["partner_id"], "ok", "Mail draft opened", now_iso()))
+            return json_response(self, {"to": row["email"], "subject": subject, "body": body, "sent": False, "mode": "mailto"})
+        self.send_error(HTTPStatus.NOT_FOUND)
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path.startswith("/api/partners/"):
+            partner_id = path.split("/")[3]
+            if not partner_id.isdigit():
+                return json_response(self, {"error": "Invalid partner id"}, HTTPStatus.BAD_REQUEST)
+            try:
+                with get_db() as db:
+                    partner = db.execute("SELECT * FROM partners WHERE id=?", (partner_id,)).fetchone()
+                    if not partner:
+                        return json_response(self, {"error": "Partner not found"}, HTTPStatus.NOT_FOUND)
+                    uploads = [row[0] for row in db.execute(
+                        "SELECT baseline_file FROM scans WHERE partner_id=? UNION SELECT current_file FROM scans WHERE partner_id=?",
+                        (partner_id, partner_id),
+                    ).fetchall()]
+                    db.execute("DELETE FROM partners WHERE id=?", (partner_id,))
+                for filename in uploads:
+                    if filename:
+                        try:
+                            (UPLOADS / Path(filename).name).unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                return json_response(self, {"deleted": True, "id": int(partner_id), "name": partner["name"]})
+            except Exception as exc:
+                return json_response(self, {"error": str(exc)}, HTTPStatus.BAD_REQUEST)
         self.send_error(HTTPStatus.NOT_FOUND)
 
 
